@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   const { byId, qsa, escapeHtml, request, fileToDataUrl, toast, formatDateTime, downloadCsv } = window.PhysicsStudio;
 
   const state = {
@@ -69,8 +69,44 @@
     ).join("");
   }
 
+  function bindAdminDrawerSwipe() {
+    const panel = byId("admin-mobile-panel");
+    if (!panel || panel.dataset.swipeBound) return;
+    panel.dataset.swipeBound = "true";
+
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    panel.addEventListener("touchstart", (e) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      currentX = startX;
+      currentY = startY;
+    }, { passive: true });
+
+    panel.addEventListener("touchmove", (e) => {
+      if (e.touches.length !== 1) return;
+      currentX = e.touches[0].clientX;
+      currentY = e.touches[0].clientY;
+    }, { passive: true });
+
+    panel.addEventListener("touchend", () => {
+      const deltaX = currentX - startX;
+      const deltaY = currentY - startY;
+
+      // Swiping right in RTL drawer closes it
+      if (deltaX > 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.1) {
+        setMobileDrawer(false);
+      }
+    }, { passive: true });
+  }
+
   function setMobileDrawer(open) {
     state.mobileNavOpen = Boolean(open);
+    document.body.style.overflow = open ? "hidden" : "";
     const drawer = byId("admin-mobile-drawer");
     const backdrop = byId("admin-mobile-backdrop");
     const panel = byId("admin-mobile-panel");
@@ -95,6 +131,10 @@
 
     if (openButton) {
       openButton.setAttribute("aria-expanded", String(open));
+    }
+
+    if (open) {
+      bindAdminDrawerSwipe();
     }
   }
 
@@ -143,61 +183,62 @@
   function renderShell() {
     const app = byId("admin-app");
     app.innerHTML = `
-      <div class="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
-        <aside class="glass-panel sticky top-4 hidden h-fit rounded-[2rem] p-4 lg:block">
-          <p class="text-sm font-bold uppercase tracking-[0.28em] text-sky-500">لوحة الأدمن</p>
-          <h1 class="mt-2 text-3xl font-extrabold text-slate-900">Al-Shater Physics Academy</h1>
+      <div class="grid gap-4 sm:gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <aside class="glass-panel sticky top-4 hidden h-fit rounded-2xl sm:rounded-[2rem] p-4 lg:block">
+          <p class="text-xs font-bold uppercase tracking-[0.28em] text-sky-500">لوحة الأدمن</p>
+          <h1 class="mt-1 text-2xl font-extrabold text-slate-900">Al-Shater Physics</h1>
           <div class="mt-4 grid gap-2">
             ${renderAdminNavButtons()}
           </div>
-          <div class="mt-6 grid gap-3">
-            <button type="button" data-kill-switch-btn class="rounded-full bg-slate-900 px-4 py-3 font-extrabold text-white">${state.settings?.siteLocked ? "فتح الموقع" : "Kill Switch"}</button>
-            <button type="button" data-logout-btn class="rounded-full border border-slate-200 bg-white px-4 py-3 font-extrabold text-slate-700">تسجيل الخروج</button>
+          <div class="mt-6 grid gap-2">
+            <button type="button" data-logout-btn class="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-extrabold text-slate-700 transition hover:bg-slate-50">تسجيل الخروج</button>
           </div>
         </aside>
 
         <div id="admin-mobile-drawer" class="fixed inset-0 z-40 lg:hidden opacity-0 pointer-events-none transition-opacity duration-200 ease-out" aria-hidden="true">
           <button type="button" id="admin-mobile-backdrop" class="absolute inset-0 hidden bg-slate-950/35 backdrop-blur-[2px]" aria-label="إغلاق القائمة"></button>
-          <aside id="admin-mobile-panel" class="drawer-panel absolute inset-y-0 right-0 w-[min(88vw,340px)] translate-x-full overflow-y-auto rounded-l-[2rem] bg-white p-4 transition-transform duration-200 ease-out">
-            <div class="flex items-start justify-between gap-3">
+          <aside id="admin-mobile-panel" class="drawer-panel absolute inset-y-0 right-0 w-[min(85vw,320px)] translate-x-full overflow-y-auto rounded-l-2xl bg-white p-4 transition-transform duration-200 ease-out shadow-2xl">
+            <div class="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
               <div>
-                <p class="text-xs font-bold uppercase tracking-[0.28em] text-sky-500">لوحة الأدمن</p>
-                <p class="mt-1 text-xl font-extrabold text-slate-900">Al-Shater Physics Academy</p>
+                <p class="text-xs font-bold uppercase tracking-[0.24em] text-sky-500">لوحة الأدمن</p>
+                <p class="mt-0.5 text-lg font-extrabold text-slate-900">أكاديمية الشاطر</p>
               </div>
-              <button type="button" id="admin-drawer-close" class="grid h-10 w-10 place-items-center rounded-full border border-slate-200 bg-white text-2xl text-slate-500" aria-label="إغلاق القائمة">×</button>
+              <button type="button" id="admin-drawer-close" class="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-xl text-slate-500 transition hover:bg-slate-50 active:scale-95" aria-label="إغلاق القائمة">×</button>
             </div>
-            <div class="mt-5 grid gap-2">
+            <div class="mt-4 grid gap-2">
               ${renderAdminNavButtons()}
             </div>
-            <div class="mt-6 grid gap-3">
-              <button type="button" data-kill-switch-btn class="rounded-full bg-slate-900 px-4 py-3 font-extrabold text-white">${state.settings?.siteLocked ? "فتح الموقع" : "Kill Switch"}</button>
-              <button type="button" data-logout-btn class="rounded-full border border-slate-200 bg-white px-4 py-3 font-extrabold text-slate-700">تسجيل الخروج</button>
+            <div class="mt-5 grid gap-2">
+              <button type="button" data-logout-btn class="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-extrabold text-slate-700">تسجيل الخروج</button>
+            </div>
+            <div class="mt-6 rounded-xl bg-sky-50 p-3 text-center text-xs text-sky-700">
+              👈 اسحب القائمة لليمين لإغلاقها بسهولة
             </div>
           </aside>
         </div>
 
-        <section class="grid gap-5">
-          <header class="glass-panel rounded-[2rem] p-5 sm:p-6">
+        <section class="grid gap-4 sm:gap-5">
+          <header class="glass-panel rounded-2xl sm:rounded-[2rem] p-3.5 sm:p-5">
             <div class="flex flex-wrap items-start justify-between gap-3">
-              <div class="flex items-start gap-3">
-                <button type="button" id="admin-drawer-open" data-admin-drawer-open class="grid h-11 w-11 place-items-center rounded-full border border-sky-100 bg-white text-sky-600 shadow-sm lg:hidden" aria-label="فتح القائمة" aria-expanded="false">
-                  <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <div class="flex items-start gap-2.5">
+                <button type="button" id="admin-drawer-open" data-admin-drawer-open class="grid h-10 w-10 place-items-center rounded-full border border-sky-100 bg-white text-sky-600 shadow-sm transition active:scale-95 lg:hidden" aria-label="فتح القائمة" aria-expanded="false">
+                  <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M4 6h16" />
                     <path d="M4 12h16" />
                     <path d="M4 18h16" />
                   </svg>
                 </button>
                 <div>
-                  <p class="text-sm font-bold uppercase tracking-[0.28em] text-sky-500">الأدمن</p>
-                  <h2 class="mt-2 text-2xl font-extrabold text-slate-900">إدارة المنصة بشكل مباشر</h2>
+                  <p class="text-xs font-bold uppercase tracking-[0.24em] text-sky-500">الأدمن</p>
+                  <h2 class="mt-0.5 text-lg font-extrabold text-slate-900 sm:text-2xl">إدارة المنصة بشكل مباشر</h2>
                 </div>
               </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="rounded-full ${state.settings?.siteLocked ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700"} px-4 py-2 text-sm font-bold">${state.settings?.siteLocked ? "الصيانة مفعلة" : "الموقع شغال"}</span>
-                <span class="rounded-full bg-sky-100 px-4 py-2 text-sm font-bold text-sky-700">واتساب: ${state.settings?.whatsappVisible === false ? "مخفي" : "ظاهر"}</span>
+              <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                <span class="rounded-full ${state.settings?.siteLocked ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700"} px-3 py-1.5 font-bold">${state.settings?.siteLocked ? "الصيانة مفعلة" : "الموقع شغال"}</span>
+                <span class="rounded-full bg-sky-100 px-3 py-1.5 font-bold text-sky-700">واتساب: ${state.settings?.whatsappVisible === false ? "مخفي" : "ظاهر"}</span>
               </div>
             </div>
-            <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" id="stats-row"></div>
+            <div class="mt-4 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6" id="stats-row"></div>
           </header>
 
           <section id="section-dashboard" class="admin-section"></section>
@@ -209,8 +250,8 @@
           <section id="section-exams" class="admin-section hidden"></section>
         </section>
       </div>
-      <button type="button" data-admin-drawer-open class="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-3 font-extrabold text-white shadow-lg shadow-slate-900/20 lg:hidden">
-        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+      <button type="button" data-admin-drawer-open class="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-3 text-xs sm:text-sm font-extrabold text-white shadow-xl shadow-slate-900/30 transition hover:bg-slate-800 active:scale-95 lg:hidden">
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M4 6h16" />
           <path d="M4 12h16" />
           <path d="M4 18h16" />
@@ -219,6 +260,7 @@
       </button>
     `;
   }
+
   function renderStats() {
     const alertCount = state.students.filter((student) => student.securityAlert).length;
     const stats = [
@@ -233,9 +275,9 @@
     byId("stats-row").innerHTML = stats
       .map(
         (item) => `
-          <div class="rounded-[1.5rem] border border-slate-100 bg-white p-4">
-            <p class="text-3xl font-extrabold ${item.tone === "danger" ? "text-rose-700" : "text-slate-900"}">${item.value}</p>
-            <p class="mt-1 text-sm text-slate-500">${escapeHtml(item.label)}</p>
+          <div class="rounded-xl border border-slate-100 bg-white p-3 text-center sm:text-right">
+            <p class="text-xl sm:text-2xl font-extrabold ${item.tone === "danger" ? "text-rose-700" : "text-slate-900"}">${item.value}</p>
+            <p class="mt-0.5 text-xs text-slate-500">${escapeHtml(item.label)}</p>
           </div>
         `,
       )
@@ -258,51 +300,50 @@
   function renderDashboardSection() {
     const alertStudents = state.students.filter((student) => student.securityAlert).slice(0, 6);
     byId("section-dashboard").innerHTML = `
-      <div class="grid gap-5">
-        <div class="glass-panel rounded-[2rem] p-5 sm:p-6">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div class="grid gap-4 sm:gap-5">
+        <div class="glass-panel rounded-2xl sm:rounded-[2rem] p-3.5 sm:p-5">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p class="text-sm font-bold uppercase tracking-[0.28em] text-amber-500">لوحة عامة</p>
-              <h3 class="mt-2 text-2xl font-extrabold text-slate-900">كل حاجة تحت عينك في سطر واحد</h3>
+              <p class="text-xs font-bold uppercase tracking-[0.24em] text-amber-500">لوحة عامة</p>
+              <h3 class="mt-1 text-xl sm:text-2xl font-extrabold text-slate-900">ملخص المنصة السريع</h3>
             </div>
             <div class="flex gap-2">
-              <button type="button" id="refresh-now" class="rounded-full border border-slate-200 bg-white px-5 py-3 font-extrabold text-slate-700">تحديث الآن</button>
-              <button type="button" id="quick-kill-switch" class="rounded-full bg-slate-900 px-5 py-3 font-extrabold text-white">${state.settings?.siteLocked ? "فتح الموقع" : "Kill Switch"}</button>
+              <button type="button" id="refresh-now" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-extrabold text-slate-700 transition hover:bg-slate-50">تحديث الآن</button>
             </div>
           </div>
-          <div class="mt-5 grid gap-4 lg:grid-cols-2">
-            <div class="rounded-[1.5rem] bg-slate-50 p-4">
-              <p class="text-sm font-bold uppercase tracking-[0.24em] text-sky-500">آخر تنبيه مباشر</p>
-              <p class="mt-2 text-sm leading-7 text-slate-600">${escapeHtml(state.settings?.marqueeText || "مفيش إشعار مباشر مكتوب دلوقتي")}</p>
+          <div class="mt-4 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-xl bg-slate-50 p-3.5">
+              <p class="text-xs font-bold uppercase tracking-[0.2em] text-sky-500">آخر تنبيه مباشر</p>
+              <p class="mt-1 text-xs sm:text-sm leading-6 text-slate-600">${escapeHtml(state.settings?.marqueeText || "مفيش إشعار مباشر مكتوب دلوقتي")}</p>
             </div>
-            <div class="rounded-[1.5rem] bg-slate-50 p-4">
-              <p class="text-sm font-bold uppercase tracking-[0.24em] text-emerald-500">واتساب</p>
-              <p class="mt-2 text-sm leading-7 text-slate-600">${escapeHtml(state.settings?.whatsappNumber || "غير مضاف")}</p>
+            <div class="rounded-xl bg-slate-50 p-3.5">
+              <p class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-500">واتساب التواصل</p>
+              <p class="mt-1 text-xs sm:text-sm leading-6 text-slate-600">${escapeHtml(state.settings?.whatsappNumber || "غير مضاف")}</p>
             </div>
           </div>
         </div>
 
-        <div class="glass-panel rounded-[2rem] p-5 sm:p-6">
-          <p class="text-sm font-bold uppercase tracking-[0.28em] text-rose-500">الإنذارات الحمراء</p>
-          <div class="mt-4 grid gap-3">
+        <div class="glass-panel rounded-2xl sm:rounded-[2rem] p-3.5 sm:p-5">
+          <p class="text-xs font-bold uppercase tracking-[0.24em] text-rose-500">الإنذارات الحمراء</p>
+          <div class="mt-3 grid gap-3">
             ${
               alertStudents.length
                 ? alertStudents
                     .map(
                       (student) => `
-                        <article class="rounded-[1.5rem] border border-rose-200 bg-rose-50 p-4">
-                          <div class="flex flex-wrap items-start justify-between gap-3">
+                        <article class="rounded-xl border border-rose-200 bg-rose-50 p-3">
+                          <div class="flex flex-wrap items-start justify-between gap-2">
                             <div>
-                              <p class="text-lg font-extrabold text-rose-800">${escapeHtml(student.fullName)}</p>
-                              <p class="mt-1 text-sm text-rose-700">${escapeHtml(student.securityAlertReason || "إنذار بسبب اختلاف جهاز أو IP خلال وقت قصير")}</p>
+                              <p class="text-base font-extrabold text-rose-800">${escapeHtml(student.fullName)}</p>
+                              <p class="mt-0.5 text-xs text-rose-700">${escapeHtml(student.securityAlertReason || "إنذار بسبب اختلاف جهاز أو IP خلال وقت قصير")}</p>
                             </div>
-                            <span class="rounded-full bg-rose-600 px-3 py-1 text-xs font-bold text-white">إنذار أحمر</span>
+                            <span class="rounded-full bg-rose-600 px-2.5 py-1 text-[11px] font-bold text-white">إنذار أحمر</span>
                           </div>
                         </article>
                       `,
                     )
                     .join("")
-                : '<div class="rounded-[1.5rem] border border-dashed border-slate-200 bg-white p-6 text-center text-slate-500">مفيش إنذارات حالياً.</div>'
+                : '<div class="rounded-xl border border-dashed border-slate-200 bg-white p-5 text-center text-xs text-slate-500">مفيش إنذارات حالياً.</div>'
             }
           </div>
         </div>
@@ -310,7 +351,6 @@
     `;
 
     byId("refresh-now").addEventListener("click", () => loadAll({ silent: false }));
-    byId("quick-kill-switch").addEventListener("click", toggleSiteLock);
   }
 
   function renderStudentsSection() {
@@ -461,37 +501,48 @@
   function renderSettingsSection() {
     const settings = state.settings || {};
     byId("section-settings").innerHTML = `
-      <div class="glass-panel rounded-[2rem] p-5 sm:p-6">
-        <p class="text-sm font-bold uppercase tracking-[0.28em] text-sky-500">الإعدادات</p>
-        <h3 class="mt-2 text-2xl font-extrabold text-slate-900">الصيانة، التاكر، والواتساب</h3>
-        <form id="settings-form" class="mt-5 grid gap-4">
-          <label class="grid gap-2">
-            <span class="text-sm font-bold text-slate-700">صورة الأستاذ</span>
-            <input id="teacher-image-input" type="file" accept="image/*" class="rounded-[1.3rem] border border-slate-200 bg-white px-4 py-3" />
+      <div class="glass-panel rounded-2xl sm:rounded-[2rem] p-3.5 sm:p-5">
+        <p class="text-xs font-bold uppercase tracking-[0.24em] text-sky-500">الإعدادات العامة</p>
+        <h3 class="mt-1 text-xl sm:text-2xl font-extrabold text-slate-900">الصيانة، التاكر، والواتساب</h3>
+        <form id="settings-form" class="mt-4 grid gap-3.5">
+          <label class="grid gap-1.5">
+            <span class="text-xs sm:text-sm font-bold text-slate-700">صورة الأستاذ</span>
+            <input id="teacher-image-input" type="file" accept="image/*" class="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm" />
           </label>
-          <label class="grid gap-2">
-            <span class="text-sm font-bold text-slate-700">شريط الإشعارات</span>
-            <textarea id="marquee-text-input" rows="3" class="rounded-[1.3rem] border border-slate-200 bg-white px-4 py-3 outline-none focus:border-sky-300">${escapeHtml(settings.marqueeText || "")}</textarea>
+          <label class="grid gap-1.5">
+            <span class="text-xs sm:text-sm font-bold text-slate-700">شريط الإشعارات (التاكر)</span>
+            <textarea id="marquee-text-input" rows="2" class="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm outline-none focus:border-sky-300">${escapeHtml(settings.marqueeText || "")}</textarea>
           </label>
-          <label class="grid gap-2">
-            <span class="text-sm font-bold text-slate-700">رقم واتساب</span>
-            <input id="whatsapp-number-input" type="text" value="${escapeHtml(settings.whatsappNumber || "")}" class="rounded-[1.3rem] border border-slate-200 bg-white px-4 py-3 outline-none focus:border-sky-300" placeholder="+2010..." />
+          <label class="grid gap-1.5">
+            <span class="text-xs sm:text-sm font-bold text-slate-700">رقم واتساب</span>
+            <input id="whatsapp-number-input" type="text" value="${escapeHtml(settings.whatsappNumber || "")}" class="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm outline-none focus:border-sky-300" placeholder="+2010..." />
           </label>
           <div class="grid gap-3 md:grid-cols-2">
-            <label class="flex items-center gap-3 rounded-[1.3rem] border border-slate-200 bg-white px-4 py-3">
+            <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm">
               <input id="site-locked-input" type="checkbox" class="h-4 w-4 accent-slate-900" ${settings.siteLocked ? "checked" : ""} />
-              <span class="font-bold text-slate-700">تفعيل الصيانة</span>
+              <span class="font-bold text-slate-700">تفعيل الصيانة العامة</span>
             </label>
-            <label class="flex items-center gap-3 rounded-[1.3rem] border border-slate-200 bg-white px-4 py-3">
+            <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm">
               <input id="whatsapp-visible-input" type="checkbox" class="h-4 w-4 accent-slate-900" ${settings.whatsappVisible === false ? "" : "checked"} />
               <span class="font-bold text-slate-700">إظهار زر واتساب</span>
             </label>
           </div>
-          <div class="flex items-center justify-end gap-3">
-            <button type="button" id="preview-kill-switch" class="rounded-full border border-slate-200 bg-white px-5 py-3 font-bold text-slate-700">${settings.siteLocked ? "فتح الموقع" : "Kill Switch"}</button>
-            <button type="submit" class="rounded-full bg-slate-900 px-5 py-3 font-extrabold text-white">حفظ الإعدادات</button>
+          <div class="flex items-center justify-end gap-2.5 mt-2">
+            <button type="submit" class="rounded-full bg-slate-900 px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white transition hover:bg-slate-800">حفظ الإعدادات</button>
           </div>
         </form>
+
+        <div class="mt-6 rounded-2xl border border-rose-200 bg-rose-50/70 p-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p class="font-extrabold text-rose-900 text-sm sm:text-base">زرار الطوارئ (Kill Switch)</p>
+              <p class="text-xs text-rose-700 mt-0.5">تنبيه: هذا الزر مخصص للأدمن فقط لقفل أو فتح الموقع بالكامل فوراً.</p>
+            </div>
+            <button type="button" id="preview-kill-switch" class="rounded-full ${settings.siteLocked ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"} px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white transition active:scale-95 shadow-md">
+              ${settings.siteLocked ? "فتح الموقع الآن" : "إغلاق الموقع (Kill Switch)"}
+            </button>
+          </div>
+        </div>
       </div>
     `;
 
@@ -511,9 +562,6 @@
       });
     });
 
-    qsa("[data-kill-switch-btn]").forEach((button) => {
-      button.addEventListener("click", toggleSiteLock);
-    });
     qsa("[data-admin-drawer-open]").forEach((button) => {
       button.addEventListener("click", () => setMobileDrawer(true));
     });

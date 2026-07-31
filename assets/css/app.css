@@ -6,6 +6,22 @@ html,
 body {
   font-family: "Tajawal", system-ui, sans-serif;
   scroll-behavior: smooth;
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  width: 100% !important;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+}
+
+*,
+::before,
+::after {
+  box-sizing: border-box;
 }
 
 body {
@@ -14,6 +30,13 @@ body {
     radial-gradient(circle at top right, rgba(186, 230, 253, 0.28), transparent 28%),
     radial-gradient(circle at bottom left, rgba(224, 242, 254, 0.28), transparent 28%),
     #fff;
+}
+
+#student-app,
+#admin-app {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .glass-panel {
@@ -173,6 +196,23 @@ body {
     radial-gradient(circle at top left, rgba(191, 219, 254, 0.34), transparent 35%),
     radial-gradient(circle at bottom right, rgba(186, 230, 253, 0.35), transparent 24%),
     rgba(255, 255, 255, 0.7);
+}
+
+@media (max-width: 640px) {
+  html {
+    font-size: 15px;
+  }
+
+  .glass-panel,
+  .admin-card,
+  .maintenance-card {
+    border-radius: 1.5rem;
+    padding: 1rem !important;
+  }
+
+  .certificate-card {
+    padding: 1rem;
+  }
 }
 
 @keyframes float-bubble {
