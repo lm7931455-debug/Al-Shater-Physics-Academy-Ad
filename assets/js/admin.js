@@ -16,7 +16,7 @@
 
   function ensureAuth() {
     return request("/api/auth/me").catch(() => {
-      window.location.replace("/admin/login.html");
+      window.location.replace("/login.html");
       throw new Error("unauthorized");
     });
   }
@@ -896,7 +896,7 @@
       });
       byId("logout-button").addEventListener("click", async () => {
         await request("/api/auth/logout", { method: "POST" });
-        window.location.replace("/admin/login.html");
+        window.location.replace("/login.html");
       });
       byId("kill-switch-btn").addEventListener("click", toggleSiteLock);
       byId("student-edit-form").addEventListener("submit", handleStudentEditSubmit);

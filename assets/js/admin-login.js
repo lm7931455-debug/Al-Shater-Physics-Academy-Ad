@@ -18,7 +18,7 @@
         }),
       });
       toast("تم تسجيل الدخول بنجاح", "success");
-      window.location.replace("/admin/");
+      window.location.replace("/");
     } catch (error) {
       errorNode.textContent = error.message || "الباسورد غير صحيح";
       errorNode.hidden = false;
@@ -30,7 +30,7 @@
   window.addEventListener("DOMContentLoaded", () => {
     byId("login-form").addEventListener("submit", handleSubmit);
     request("/api/auth/me")
-      .then(() => window.location.replace("/admin/"))
+      .then(() => window.location.replace("/"))
       .catch(() => {});
   });
 })();
