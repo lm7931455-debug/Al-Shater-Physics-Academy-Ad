@@ -509,6 +509,16 @@
             <span class="text-xs sm:text-sm font-bold text-slate-700">صورة الأستاذ</span>
             <input id="teacher-image-input" type="file" accept="image/*" class="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm" />
           </label>
+          <div class="grid gap-2">
+            <span class="text-xs sm:text-sm font-bold text-slate-700">المعاينة الحالية</span>
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+              ${
+                settings.teacherImageUrl
+                  ? `<img src="${escapeHtml(settings.teacherImageUrl)}" alt="صورة الأستاذ الحالية" class="h-36 w-full object-cover sm:h-44" />`
+                  : `<div class="grid h-36 place-items-center text-xs sm:text-sm text-slate-400">مفيش صورة مرفوعة دلوقتي</div>`
+              }
+            </div>
+          </div>
           <label class="grid gap-1.5">
             <span class="text-xs sm:text-sm font-bold text-slate-700">شريط الإشعارات (التاكر)</span>
             <textarea id="marquee-text-input" rows="2" class="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs sm:text-sm outline-none focus:border-sky-300">${escapeHtml(settings.marqueeText || "")}</textarea>

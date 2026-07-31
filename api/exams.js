@@ -1,7 +1,12 @@
 const crypto = require("node:crypto");
 const { sendJson, methodNotAllowed, readBody, getQueryId } = require("./_lib/http");
 const { getSession } = require("./_lib/session");
-const { selectRows, insertRow, updateRows, deleteRows, uploadObject, createSignedUrl, storagePathFromName } = require("./_lib/supabase");
+const { selectRows, insertRow, updateRows, deleteRows, uploadObject, storagePathFromName } = require("./_lib/supabase");
+
+function mediaUrl(storagePath) {
+  if (!storagePath) return "";
+  return `/api/media?path=${encodeURIComponent(storagePath)}`;
+}
 
 function serializeExam(row, includeCorrectAnswer = false, signedUrl = "") {
   return {
@@ -21,8 +26,7 @@ function serializeExam(row, includeCorrectAnswer = false, signedUrl = "") {
 }
 
 async function toExamPayload(row, includeCorrectAnswer) {
-  const signed = row.storage_path ? await createSignedUrl("physicsstudio-media", row.storage_path, 60 * 60 * 24) : null;
-  return serializeExam(row, includeCorrectAnswer, signed?.signedURL || "");
+  return serializeExam(row, includeCorrectAnswer, mediaUrl(row.storage_path));
 }
 
 module.exports = async function handler(req, res) {

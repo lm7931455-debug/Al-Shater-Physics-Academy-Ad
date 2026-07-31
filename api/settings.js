@@ -1,6 +1,11 @@
 const { sendJson, methodNotAllowed, readBody } = require("./_lib/http");
 const { getSession } = require("./_lib/session");
-const { selectRows, upsertRow, createSignedUrl, uploadObject, storagePathFromName } = require("./_lib/supabase");
+const { selectRows, upsertRow, uploadObject, storagePathFromName } = require("./_lib/supabase");
+
+function mediaUrl(storagePath) {
+  if (!storagePath) return "";
+  return `/api/media?path=${encodeURIComponent(storagePath)}`;
+}
 
 const SETTINGS_META_SEPARATOR = "\n__PHYSICSSTUDIO_META__\n";
 
@@ -69,13 +74,7 @@ async function resolveSettings(row) {
     };
   }
 
-  let teacherImageUrl = "";
-  if (row.teacher_image_path) {
-    const signed = await createSignedUrl("physicsstudio-media", row.teacher_image_path, 60 * 60 * 24);
-    teacherImageUrl = signed.signedURL;
-  }
-
-  return serializeSettings(row, teacherImageUrl);
+  return serializeSettings(row, mediaUrl(row.teacher_image_path));
 }
 
 module.exports = async function handler(req, res) {

@@ -1,7 +1,12 @@
 const crypto = require("node:crypto");
 const { sendJson, methodNotAllowed, readBody, getQueryId } = require("./_lib/http");
 const { getSession } = require("./_lib/session");
-const { selectRows, insertRow, updateRows, deleteRows, uploadObject, createSignedUrl, storagePathFromName } = require("./_lib/supabase");
+const { selectRows, insertRow, updateRows, deleteRows, uploadObject, storagePathFromName } = require("./_lib/supabase");
+
+function mediaUrl(storagePath) {
+  if (!storagePath) return "";
+  return `/api/media?path=${encodeURIComponent(storagePath)}`;
+}
 
 function serializeMaterial(row, signedUrl = "") {
   return {
@@ -18,8 +23,7 @@ function serializeMaterial(row, signedUrl = "") {
 }
 
 async function toPublicMaterial(row) {
-  const signed = row.storage_path ? await createSignedUrl("physicsstudio-media", row.storage_path, 60 * 60 * 24) : null;
-  return serializeMaterial(row, signed?.signedURL || "");
+  return serializeMaterial(row, mediaUrl(row.storage_path));
 }
 
 module.exports = async function handler(req, res) {
