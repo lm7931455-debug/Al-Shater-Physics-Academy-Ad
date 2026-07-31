@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Al-Shater Physics Academy | Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/css/app.css" />
+  </head>
+  <body class="min-h-screen overflow-x-hidden bg-white text-slate-900">
+    <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      <span class="floating-orb bubble-a"></span>
+      <span class="floating-orb bubble-b"></span>
+      <span class="floating-orb bubble-c"></span>
+      <span class="floating-orb bubble-d"></span>
+    </div>
+
+    <main id="admin-app" class="relative mx-auto min-h-screen w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8"></main>
+
+    <dialog id="student-edit-dialog" class="modal-surface w-[min(980px,calc(100%-1rem))] rounded-[2rem] p-0">
+      <form id="student-edit-form" class="grid gap-5 rounded-[2rem] bg-white p-5 sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-sm font-bold uppercase tracking-[0.28em] text-sky-500">إدارة الطلاب</p>
+            <h2 class="mt-2 text-2xl font-extrabold text-slate-900">تعديل بيانات الطالب</h2>
+          </div>
+          <button type="button" class="grid h-10 w-10 place-items-center rounded-full border border-slate-200 bg-white text-2xl text-slate-500" data-close-student-edit aria-label="إغلاق">×</button>
+        </div>
+        <input type="hidden" name="id" />
+        <div class="grid gap-4 md:grid-cols-2">
+          <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">الاسم رباعي</span><input name="fullName" type="text" required class="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-sky-300" /></label>
+          <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">رقم الطالب</span><input name="studentNumber" type="text" required class="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-sky-300" /></label>
+          <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">رقم الموبايل</span><input name="mobileNumber" type="text" class="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-sky-300" /></label>
+          <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">رقم ولي الأمر</span><input name="guardianNumber" type="text" required class="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-sky-300" /></label>
+          <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">المدرسة</span><input name="school" type="text" required class="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-sky-300" /></label>
+          <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">الصف</span><input name="grade" type="text" required class="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-sky-300" /></label>
+          <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">الدرجة</span><input name="score" type="number" min="0" step="0.01" class="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-sky-300" /></label>
+        </div>
+        <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <input type="checkbox" name="blocked" class="h-4 w-4 accent-slate-900" />
+          <span class="font-bold text-slate-700">حظر الطالب</span>
+        </label>
+        <div class="flex items-center justify-end gap-3">
+          <button type="button" class="rounded-full border border-slate-200 px-5 py-3 font-bold text-slate-600" data-close-student-edit>إلغاء</button>
+          <button type="submit" class="rounded-full bg-slate-900 px-5 py-3 font-extrabold text-white">حفظ</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/assets/js/shared.js"></script>
+    <script src="/assets/js/admin.js"></script>
+  </body>
+</html>
+

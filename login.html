@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Al-Shater Physics Academy | Admin Login</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/css/app.css" />
+  </head>
+  <body class="min-h-screen overflow-x-hidden bg-white text-slate-900">
+    <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      <span class="floating-orb bubble-a"></span>
+      <span class="floating-orb bubble-b"></span>
+      <span class="floating-orb bubble-c"></span>
+    </div>
+
+    <main class="mx-auto grid min-h-screen w-full max-w-7xl place-items-center px-4 py-8">
+      <section class="glass-panel w-full max-w-md rounded-[2rem] p-6 shadow-[0_30px_80px_rgba(15,23,42,.08)]">
+        <p class="text-sm font-bold uppercase tracking-[0.28em] text-sky-500">Al-Shater Physics Academy</p>
+        <h1 class="mt-3 text-3xl font-extrabold text-slate-900">تسجيل دخول الأدمن</h1>
+        <p class="mt-2 text-sm leading-7 text-slate-600">دخول بكلمة مرور فقط للوصول للوحة التحكم.</p>
+        <form id="login-form" class="mt-6 grid gap-4">
+          <label class="grid gap-2">
+            <span class="text-sm font-bold text-slate-700">كلمة المرور</span>
+            <input name="password" type="password" autocomplete="current-password" required class="rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none ring-0 transition focus:border-sky-300" />
+          </label>
+          <p id="login-error" class="hidden rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700" role="alert"></p>
+          <button type="submit" class="rounded-full bg-slate-900 px-5 py-3 font-extrabold text-white">دخول</button>
+        </form>
+      </section>
+    </main>
+    <script src="/assets/js/shared.js"></script>
+    <script src="/assets/js/admin-login.js"></script>
+  </body>
+</html>

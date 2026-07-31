@@ -1,0 +1,7 @@
+{
+  "name": "physicsstudio",
+  "private": true,
+  "version": "1.0.0",
+  "description": "PhysicsStudio - lightweight student and admin portal",
+  "type": "commonjs"
+}
