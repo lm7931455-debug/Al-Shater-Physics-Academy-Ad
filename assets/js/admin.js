@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   const { byId, qsa, escapeHtml, request, fileToDataUrl, toast, formatDateTime, downloadCsv } = window.PhysicsStudio;
 
   const state = {
@@ -7,12 +7,23 @@
     materials: [],
     exams: [],
     students: [],
+    mobileNavOpen: false,
     activeSection: "dashboard",
     studentSearch: "",
     leaderboardGradeFilter: "all",
     leaderboardChapterFilter: "all",
     refreshTimer: null,
   };
+
+  const ADMIN_SECTIONS = [
+    ["dashboard", "لوحة عامة"],
+    ["students", "الطلاب"],
+    ["alerts", "الإشعارات"],
+    ["settings", "الإعدادات"],
+    ["chapters", "الأبواب"],
+    ["materials", "المذكرات"],
+    ["exams", "الامتحانات"],
+  ];
 
   function ensureAuth() {
     return request("/api/auth/me").catch(() => {
@@ -42,8 +53,91 @@
     return rows.filter((student) =>
       [student.fullName, student.studentNumber, student.mobileNumber, student.guardianNumber, student.school, student.grade]
         .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term)),
+      .some((value) => String(value).toLowerCase().includes(term)),
     );
+  }
+
+  function adminSectionButtonClasses(active) {
+    return `rounded-[1.1rem] border px-4 py-3 text-right font-bold transition ${active ? "border-sky-300 bg-sky-100 text-sky-800" : "border-slate-200 bg-white text-slate-700"}`;
+  }
+
+  function renderAdminNavButtons(activeSection = state.activeSection) {
+    return ADMIN_SECTIONS.map(
+      ([section, label]) => `
+        <button type="button" class="${adminSectionButtonClasses(activeSection === section)}" data-section="${section}">${label}</button>
+      `,
+    ).join("");
+  }
+
+  function setMobileDrawer(open) {
+    state.mobileNavOpen = Boolean(open);
+    const drawer = byId("admin-mobile-drawer");
+    const backdrop = byId("admin-mobile-backdrop");
+    const panel = byId("admin-mobile-panel");
+    const openButton = byId("admin-drawer-open");
+
+    if (drawer) {
+      drawer.classList.toggle("opacity-0", !open);
+      drawer.classList.toggle("opacity-100", open);
+      drawer.classList.toggle("pointer-events-none", !open);
+      drawer.classList.toggle("pointer-events-auto", open);
+      drawer.setAttribute("aria-hidden", String(!open));
+    }
+
+    if (backdrop) {
+      backdrop.classList.toggle("hidden", !open);
+    }
+
+    if (panel) {
+      panel.classList.toggle("translate-x-full", !open);
+      panel.classList.toggle("translate-x-0", open);
+    }
+
+    if (openButton) {
+      openButton.setAttribute("aria-expanded", String(open));
+    }
+  }
+
+  async function buildSettingsPayload(overrides = {}) {
+    const marqueeInput = byId("marquee-text-input");
+    const whatsappInput = byId("whatsapp-number-input");
+    const siteLockedInput = byId("site-locked-input");
+    const whatsappVisibleInput = byId("whatsapp-visible-input");
+    const fileInput = byId("teacher-image-input");
+    const currentSiteLocked = Boolean(state.settings?.siteLocked);
+    const currentWhatsappVisible = state.settings?.whatsappVisible !== false;
+
+    const body = {
+      marqueeText: String(marqueeInput?.value || state.settings?.marqueeText || "").trim(),
+      whatsappNumber: String(whatsappInput?.value || state.settings?.whatsappNumber || "").trim(),
+      siteLocked: typeof overrides.siteLocked === "boolean" ? overrides.siteLocked : siteLockedInput?.checked ?? currentSiteLocked,
+      whatsappVisible:
+        typeof overrides.whatsappVisible === "boolean"
+          ? overrides.whatsappVisible
+          : whatsappVisibleInput?.checked ?? currentWhatsappVisible,
+    };
+
+    const file = fileInput?.files && fileInput.files[0];
+    if (file) {
+      body.file = {
+        name: file.name,
+        type: file.type,
+        dataUrl: await fileToDataUrl(file),
+      };
+    }
+
+    return body;
+  }
+
+  async function saveSettings(overrides = {}, successMessage = "تم حفظ الإعدادات") {
+    const body = await buildSettingsPayload(overrides);
+    const response = await request("/api/settings", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
+    toast(successMessage, "success");
+    await loadAll({ silent: true });
+    return response;
   }
 
   function renderShell() {
@@ -54,34 +148,49 @@
           <p class="text-sm font-bold uppercase tracking-[0.28em] text-sky-500">لوحة الأدمن</p>
           <h1 class="mt-2 text-3xl font-extrabold text-slate-900">Al-Shater Physics Academy</h1>
           <div class="mt-4 grid gap-2">
-            ${[
-              ["dashboard", "لوحة عامة"],
-              ["students", "الطلاب"],
-              ["alerts", "الإنذارات"],
-              ["settings", "الإعدادات"],
-              ["chapters", "الأبواب"],
-              ["materials", "المذكرات"],
-              ["exams", "الامتحانات"],
-            ]
-              .map(
-                ([section, label]) => `
-                  <button type="button" class="rounded-[1.1rem] border px-4 py-3 text-right font-bold transition ${state.activeSection === section ? "border-sky-300 bg-sky-100 text-sky-800" : "border-slate-200 bg-white text-slate-700"}" data-section="${section}">${label}</button>
-                `,
-              )
-              .join("")}
+            ${renderAdminNavButtons()}
           </div>
           <div class="mt-6 grid gap-3">
-            <button type="button" id="kill-switch-btn" class="rounded-full bg-slate-900 px-4 py-3 font-extrabold text-white">${state.settings?.siteLocked ? "فتح الموقع" : "Kill Switch"}</button>
-            <button type="button" id="logout-button" class="rounded-full border border-slate-200 bg-white px-4 py-3 font-extrabold text-slate-700">تسجيل الخروج</button>
+            <button type="button" data-kill-switch-btn class="rounded-full bg-slate-900 px-4 py-3 font-extrabold text-white">${state.settings?.siteLocked ? "فتح الموقع" : "Kill Switch"}</button>
+            <button type="button" data-logout-btn class="rounded-full border border-slate-200 bg-white px-4 py-3 font-extrabold text-slate-700">تسجيل الخروج</button>
           </div>
         </aside>
 
+        <div id="admin-mobile-drawer" class="fixed inset-0 z-40 lg:hidden opacity-0 pointer-events-none transition-opacity duration-200 ease-out" aria-hidden="true">
+          <button type="button" id="admin-mobile-backdrop" class="absolute inset-0 hidden bg-slate-950/35 backdrop-blur-[2px]" aria-label="إغلاق القائمة"></button>
+          <aside id="admin-mobile-panel" class="drawer-panel absolute inset-y-0 right-0 w-[min(88vw,340px)] translate-x-full overflow-y-auto rounded-l-[2rem] bg-white p-4 transition-transform duration-200 ease-out">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-[0.28em] text-sky-500">لوحة الأدمن</p>
+                <p class="mt-1 text-xl font-extrabold text-slate-900">Al-Shater Physics Academy</p>
+              </div>
+              <button type="button" id="admin-drawer-close" class="grid h-10 w-10 place-items-center rounded-full border border-slate-200 bg-white text-2xl text-slate-500" aria-label="إغلاق القائمة">×</button>
+            </div>
+            <div class="mt-5 grid gap-2">
+              ${renderAdminNavButtons()}
+            </div>
+            <div class="mt-6 grid gap-3">
+              <button type="button" data-kill-switch-btn class="rounded-full bg-slate-900 px-4 py-3 font-extrabold text-white">${state.settings?.siteLocked ? "فتح الموقع" : "Kill Switch"}</button>
+              <button type="button" data-logout-btn class="rounded-full border border-slate-200 bg-white px-4 py-3 font-extrabold text-slate-700">تسجيل الخروج</button>
+            </div>
+          </aside>
+        </div>
+
         <section class="grid gap-5">
           <header class="glass-panel rounded-[2rem] p-5 sm:p-6">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <p class="text-sm font-bold uppercase tracking-[0.28em] text-sky-500">الأدمن</p>
-                <h2 class="mt-2 text-2xl font-extrabold text-slate-900">إدارة المنصة بشكل مباشر</h2>
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="flex items-start gap-3">
+                <button type="button" id="admin-drawer-open" class="grid h-11 w-11 place-items-center rounded-full border border-sky-100 bg-white text-sky-600 shadow-sm lg:hidden" aria-label="فتح القائمة" aria-expanded="false">
+                  <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path d="M4 6h16" />
+                    <path d="M4 12h16" />
+                    <path d="M4 18h16" />
+                  </svg>
+                </button>
+                <div>
+                  <p class="text-sm font-bold uppercase tracking-[0.28em] text-sky-500">الأدمن</p>
+                  <h2 class="mt-2 text-2xl font-extrabold text-slate-900">إدارة المنصة بشكل مباشر</h2>
+                </div>
               </div>
               <div class="flex flex-wrap items-center gap-2">
                 <span class="rounded-full ${state.settings?.siteLocked ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700"} px-4 py-2 text-sm font-bold">${state.settings?.siteLocked ? "الصيانة مفعلة" : "الموقع شغال"}</span>
@@ -102,7 +211,6 @@
       </div>
     `;
   }
-
   function renderStats() {
     const alertCount = state.students.filter((student) => student.securityAlert).length;
     const stats = [
@@ -130,12 +238,13 @@
     state.activeSection = section;
     qsa("[data-section]").forEach((button) => {
       const active = button.getAttribute("data-section") === section;
-      button.className = `rounded-[1.1rem] border px-4 py-3 text-right font-bold transition ${active ? "border-sky-300 bg-sky-100 text-sky-800" : "border-slate-200 bg-white text-slate-700"}`;
+      button.className = adminSectionButtonClasses(active);
     });
     ["dashboard", "students", "alerts", "settings", "chapters", "materials", "exams"].forEach((name) => {
       const panel = byId(`section-${name}`);
       if (panel) panel.classList.toggle("hidden", name !== section);
     });
+    setMobileDrawer(false);
   }
 
   function renderDashboardSection() {
@@ -380,6 +489,26 @@
 
     byId("settings-form").addEventListener("submit", handleSettingsSubmit);
     byId("preview-kill-switch").addEventListener("click", toggleSiteLock);
+  }
+
+  function bindShellActions() {
+    qsa("[data-section]").forEach((button) => {
+      button.addEventListener("click", () => setActiveSection(button.getAttribute("data-section")));
+    });
+
+    qsa("[data-logout-btn]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        await request("/api/auth/logout", { method: "POST" });
+        window.location.replace("/login.html");
+      });
+    });
+
+    qsa("[data-kill-switch-btn]").forEach((button) => {
+      button.addEventListener("click", toggleSiteLock);
+    });
+    byId("admin-drawer-open")?.addEventListener("click", () => setMobileDrawer(true));
+    byId("admin-drawer-close")?.addEventListener("click", () => setMobileDrawer(false));
+    byId("admin-mobile-backdrop")?.addEventListener("click", () => setMobileDrawer(false));
   }
 
   function renderChaptersSection() {
@@ -677,31 +806,11 @@
 
   async function handleSettingsSubmit(event) {
     event.preventDefault();
-    const fileInput = byId("teacher-image-input");
-    const file = fileInput.files && fileInput.files[0];
-
-    const body = {
-      marqueeText: byId("marquee-text-input").value.trim(),
-      whatsappNumber: byId("whatsapp-number-input").value.trim(),
-      siteLocked: byId("site-locked-input").checked,
-      whatsappVisible: byId("whatsapp-visible-input").checked,
-    };
-
-    if (file) {
-      body.file = {
-        name: file.name,
-        type: file.type,
-        dataUrl: await fileToDataUrl(file),
-      };
+    try {
+      await saveSettings();
+    } catch (error) {
+      toast(error.message || "تعذر حفظ الإعدادات", "error");
     }
-
-    await request("/api/settings", {
-      method: "PUT",
-      body: JSON.stringify(body),
-    });
-
-    toast("تم حفظ الإعدادات", "success");
-    await loadAll({ silent: true });
   }
 
   async function handleChapterSubmit(event) {
@@ -799,32 +908,8 @@
 
   async function toggleSiteLock() {
     if (!state.settings) return;
-    const form = byId("settings-form");
-    const body = {
-      marqueeText: String(byId("marquee-text-input")?.value || state.settings.marqueeText || "").trim(),
-      whatsappNumber: String(byId("whatsapp-number-input")?.value || state.settings.whatsappNumber || "").trim(),
-      siteLocked: !state.settings.siteLocked,
-      whatsappVisible: byId("whatsapp-visible-input")?.checked ?? state.settings.whatsappVisible !== false,
-    };
-
-    const fileInput = byId("teacher-image-input");
-    const file = fileInput?.files && fileInput.files[0];
-    if (file) {
-      body.file = {
-        name: file.name,
-        type: file.type,
-        dataUrl: await fileToDataUrl(file),
-      };
-    }
-
     try {
-      await request("/api/settings", {
-        method: "PUT",
-        body: JSON.stringify(body),
-      });
-      toast(body.siteLocked ? "تم تفعيل الصيانة" : "تم فتح الموقع", "success");
-      await loadAll({ silent: true });
-      if (form) form.reset();
+      await saveSettings({ siteLocked: !state.settings.siteLocked }, state.settings.siteLocked ? "تم فتح الموقع" : "تم تفعيل الصيانة");
     } catch (error) {
       toast(error.message || "تعذر تحديث حالة الموقع", "error");
     }
@@ -845,9 +930,9 @@
     state.exams = exams;
     state.students = students;
 
-    if (!byId("admin-app").innerHTML.trim()) {
-      renderShell();
-    }
+    renderShell();
+    setMobileDrawer(false);
+    bindShellActions();
 
     renderStats();
     renderDashboardSection();
@@ -889,16 +974,6 @@
   window.addEventListener("DOMContentLoaded", async () => {
     try {
       await ensureAuth();
-      renderShell();
-
-      qsa("[data-section]").forEach((button) => {
-        button.addEventListener("click", () => setActiveSection(button.getAttribute("data-section")));
-      });
-      byId("logout-button").addEventListener("click", async () => {
-        await request("/api/auth/logout", { method: "POST" });
-        window.location.replace("/login.html");
-      });
-      byId("kill-switch-btn").addEventListener("click", toggleSiteLock);
       byId("student-edit-form").addEventListener("submit", handleStudentEditSubmit);
       qsa("[data-close-student-edit]").forEach((button) => {
         button.addEventListener("click", () => byId("student-edit-dialog").close());
@@ -922,3 +997,4 @@
     }
   });
 })();
+

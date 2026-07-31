@@ -44,43 +44,47 @@ async function resolveSettings(row) {
 }
 
 module.exports = async function handler(req, res) {
-  if (req.method === "GET") {
-    const row = await loadSettingsRow();
-    const payload = await resolveSettings(row);
+  try {
+    if (req.method === "GET") {
+      const row = await loadSettingsRow();
+      const payload = await resolveSettings(row);
+      sendJson(res, 200, payload);
+      return;
+    }
+
+    if (req.method !== "PUT" && req.method !== "POST") {
+      methodNotAllowed(res, ["GET", "PUT", "POST"]);
+      return;
+    }
+
+    if (!getSession(req)) {
+      sendJson(res, 401, { message: "Unauthorized" });
+      return;
+    }
+
+    const body = await readBody(req);
+    const current = await loadSettingsRow();
+    let teacherImagePath = String(body.teacherImagePath || body.teacherImageUrl || current?.teacher_image_path || "").trim();
+
+    if (body.file && body.file.dataUrl) {
+      teacherImagePath = storagePathFromName("settings/teacher", body.file.name || "teacher-image.png");
+      await uploadObject("physicsstudio-media", teacherImagePath, body.file.dataUrl, body.file.type);
+    }
+
+    const next = {
+      id: 1,
+      teacher_image_path: teacherImagePath,
+      marquee_text: String(body.marqueeText || current?.marquee_text || "").trim(),
+      site_locked: Boolean(body.siteLocked ?? current?.site_locked ?? false),
+      whatsapp_visible: body.whatsappVisible == null ? Boolean(current?.whatsapp_visible ?? true) : Boolean(body.whatsappVisible),
+      whatsapp_number: String(body.whatsappNumber || current?.whatsapp_number || "").trim(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const rows = await upsertRow("settings", next, { onConflict: "id" });
+    const payload = await resolveSettings(rows[0]);
     sendJson(res, 200, payload);
-    return;
+  } catch (error) {
+    sendJson(res, 500, { message: error.message || "Failed to update settings" });
   }
-
-  if (req.method !== "PUT" && req.method !== "POST") {
-    methodNotAllowed(res, ["GET", "PUT", "POST"]);
-    return;
-  }
-
-  if (!getSession(req)) {
-    sendJson(res, 401, { message: "Unauthorized" });
-    return;
-  }
-
-  const body = await readBody(req);
-  const current = await loadSettingsRow();
-  let teacherImagePath = String(body.teacherImagePath || body.teacherImageUrl || current?.teacher_image_path || "").trim();
-
-  if (body.file && body.file.dataUrl) {
-    teacherImagePath = storagePathFromName("settings/teacher", body.file.name || "teacher-image.png");
-    await uploadObject("physicsstudio-media", teacherImagePath, body.file.dataUrl, body.file.type);
-  }
-
-  const next = {
-    id: 1,
-    teacher_image_path: teacherImagePath,
-    marquee_text: String(body.marqueeText || current?.marquee_text || "").trim(),
-    site_locked: Boolean(body.siteLocked ?? current?.site_locked ?? false),
-    whatsapp_visible: body.whatsappVisible == null ? Boolean(current?.whatsapp_visible ?? true) : Boolean(body.whatsappVisible),
-    whatsapp_number: String(body.whatsappNumber || current?.whatsapp_number || "").trim(),
-    updated_at: new Date().toISOString(),
-  };
-
-  const rows = await upsertRow("settings", next, { onConflict: "id" });
-  const payload = await resolveSettings(rows[0]);
-  sendJson(res, 200, payload);
 };

@@ -36,7 +36,7 @@
       : await response.text();
 
     if (!response.ok) {
-      const message = payload && typeof payload === "object" && payload.message ? payload.message : "Request failed";
+      const message = payload && typeof payload === "object" && payload.message ? payload.message : `Request failed (${response.status})`;
       throw new Error(message);
     }
 
