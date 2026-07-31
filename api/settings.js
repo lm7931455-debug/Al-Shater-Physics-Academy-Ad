@@ -2,14 +2,49 @@ const { sendJson, methodNotAllowed, readBody } = require("./_lib/http");
 const { getSession } = require("./_lib/session");
 const { selectRows, upsertRow, createSignedUrl, uploadObject, storagePathFromName } = require("./_lib/supabase");
 
+const SETTINGS_META_SEPARATOR = "\n__PHYSICSSTUDIO_META__\n";
+
+function splitMarqueePayload(value) {
+  const raw = String(value || "");
+  const separatorIndex = raw.indexOf(SETTINGS_META_SEPARATOR);
+  if (separatorIndex === -1) {
+    return {
+      marqueeText: raw,
+      meta: {},
+    };
+  }
+
+  const marqueeText = raw.slice(0, separatorIndex);
+  const metaRaw = raw.slice(separatorIndex + SETTINGS_META_SEPARATOR.length);
+  try {
+    return {
+      marqueeText,
+      meta: JSON.parse(metaRaw),
+    };
+  } catch (_) {
+    return {
+      marqueeText,
+      meta: {},
+    };
+  }
+}
+
+function serializeMarqueePayload(marqueeText, meta = {}) {
+  return `${String(marqueeText || "")}${SETTINGS_META_SEPARATOR}${JSON.stringify({
+    siteLocked: Boolean(meta.siteLocked),
+    whatsappVisible: meta.whatsappVisible == null ? true : Boolean(meta.whatsappVisible),
+  })}`;
+}
+
 function serializeSettings(row, teacherImageUrl = "") {
+  const decoded = splitMarqueePayload(row.marquee_text);
   return {
     id: row.id,
     teacherImageUrl,
     teacherImagePath: row.teacher_image_path || "",
-    marqueeText: row.marquee_text || "",
-    siteLocked: Boolean(row.site_locked),
-    whatsappVisible: row.whatsapp_visible !== false,
+    marqueeText: decoded.marqueeText || "",
+    siteLocked: decoded.meta.siteLocked == null ? false : Boolean(decoded.meta.siteLocked),
+    whatsappVisible: decoded.meta.whatsappVisible == null ? true : Boolean(decoded.meta.whatsappVisible),
     whatsappNumber: row.whatsapp_number || "",
     updatedAt: row.updated_at || null,
   };
@@ -65,6 +100,16 @@ module.exports = async function handler(req, res) {
     const body = await readBody(req);
     const current = await loadSettingsRow();
     let teacherImagePath = String(body.teacherImagePath || body.teacherImageUrl || current?.teacher_image_path || "").trim();
+    const currentDecoded = splitMarqueePayload(current?.marquee_text || "");
+    const nextMeta = {
+      siteLocked: body.siteLocked == null ? Boolean(currentDecoded.meta.siteLocked ?? false) : Boolean(body.siteLocked),
+      whatsappVisible:
+        body.whatsappVisible == null
+          ? currentDecoded.meta.whatsappVisible == null
+            ? true
+            : Boolean(currentDecoded.meta.whatsappVisible)
+          : Boolean(body.whatsappVisible),
+    };
 
     if (body.file && body.file.dataUrl) {
       teacherImagePath = storagePathFromName("settings/teacher", body.file.name || "teacher-image.png");
@@ -74,9 +119,10 @@ module.exports = async function handler(req, res) {
     const next = {
       id: 1,
       teacher_image_path: teacherImagePath,
-      marquee_text: String(body.marqueeText || current?.marquee_text || "").trim(),
-      site_locked: Boolean(body.siteLocked ?? current?.site_locked ?? false),
-      whatsapp_visible: body.whatsappVisible == null ? Boolean(current?.whatsapp_visible ?? true) : Boolean(body.whatsappVisible),
+      marquee_text: serializeMarqueePayload(
+        String(body.marqueeText ?? currentDecoded.marqueeText ?? "").trim(),
+        nextMeta,
+      ),
       whatsapp_number: String(body.whatsappNumber || current?.whatsapp_number || "").trim(),
       updated_at: new Date().toISOString(),
     };

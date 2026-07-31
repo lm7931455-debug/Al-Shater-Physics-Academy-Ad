@@ -180,7 +180,7 @@
           <header class="glass-panel rounded-[2rem] p-5 sm:p-6">
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div class="flex items-start gap-3">
-                <button type="button" id="admin-drawer-open" class="grid h-11 w-11 place-items-center rounded-full border border-sky-100 bg-white text-sky-600 shadow-sm lg:hidden" aria-label="فتح القائمة" aria-expanded="false">
+                <button type="button" id="admin-drawer-open" data-admin-drawer-open class="grid h-11 w-11 place-items-center rounded-full border border-sky-100 bg-white text-sky-600 shadow-sm lg:hidden" aria-label="فتح القائمة" aria-expanded="false">
                   <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                     <path d="M4 6h16" />
                     <path d="M4 12h16" />
@@ -209,6 +209,14 @@
           <section id="section-exams" class="admin-section hidden"></section>
         </section>
       </div>
+      <button type="button" data-admin-drawer-open class="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-3 font-extrabold text-white shadow-lg shadow-slate-900/20 lg:hidden">
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M4 6h16" />
+          <path d="M4 12h16" />
+          <path d="M4 18h16" />
+        </svg>
+        <span>القائمة</span>
+      </button>
     `;
   }
   function renderStats() {
@@ -506,7 +514,9 @@
     qsa("[data-kill-switch-btn]").forEach((button) => {
       button.addEventListener("click", toggleSiteLock);
     });
-    byId("admin-drawer-open")?.addEventListener("click", () => setMobileDrawer(true));
+    qsa("[data-admin-drawer-open]").forEach((button) => {
+      button.addEventListener("click", () => setMobileDrawer(true));
+    });
     byId("admin-drawer-close")?.addEventListener("click", () => setMobileDrawer(false));
     byId("admin-mobile-backdrop")?.addEventListener("click", () => setMobileDrawer(false));
   }
